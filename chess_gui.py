@@ -7,7 +7,7 @@
 #
 import chess_engine
 import pygame as py
-
+import logging
 import ai_engine
 from enums import Player
 
@@ -159,6 +159,7 @@ def main():
                             elif human_player is 'b':
                                 ai_move = ai.minimax_black(game_state, 3, -100000, 100000, True, Player.PLAYER_1)
                                 game_state.move_piece(ai_move[0], ai_move[1], True)
+
                     else:
                         valid_moves = game_state.get_valid_moves((row, col))
                         if valid_moves is None:
@@ -187,6 +188,7 @@ def main():
         elif endgame == 2:
             game_over = True
             draw_text(screen, "Stalemate.")
+
 
         clock.tick(MAX_FPS)
         py.display.flip()
