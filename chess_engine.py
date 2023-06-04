@@ -6,6 +6,9 @@
 #
 from Piece import Rook, Knight, Bishop, Queen, King, Pawn
 from enums import Player
+import logging
+
+logging.basicConfig(filename='game.log', level=logging.INFO)
 
 '''
 r \ c     0           1           2           3           4           5           6           7 
@@ -20,12 +23,18 @@ r \ c     0           1           2           3           4           5         
 '''
 
 
+
+
 # TODO: Flip the board according to the player
 # TODO: Pawns are usually indicated by no letters
 # TODO: stalemate
 # TODO: move logs - fix king castle boolean update
 # TODO: change move method argument about is_ai into something more elegant
 class game_state:
+    count_checks=0
+    count_turn_black = 0
+    count_turn_white = 0
+    count_knight=0
     # Initialize 2D array to represent the chess board
     def __init__(self):
         # The board is a 2D array
@@ -174,6 +183,7 @@ class game_state:
                     if can_move:
                         valid_moves.append(move)
                 self._is_check = True
+                self.count_checks=self.count_checks+1
             # pinned checks
             elif pinned_pieces and moving_piece.get_name() is not "k":
                 if starting_square not in pinned_pieces:
@@ -220,12 +230,30 @@ class game_state:
         all_white_moves = self.get_all_legal_moves(Player.PLAYER_1)
         all_black_moves = self.get_all_legal_moves(Player.PLAYER_2)
         if self._is_check and self.whose_turn() and not all_white_moves:
+            logging.info(
+                "The number of turns that all the white tools together survived: {}".format(self.count_turn_white))
+            logging.info(
+                "The number of turns that all the black tools together survived: {}".format(self.count_turn_black))
+            logging.info("num of checks are: {}".format(game_state.count_checks))
+            logging.info("black win")
             print("white lost")
             return 0
         elif self._is_check and not self.whose_turn() and not all_black_moves:
+            logging.info(
+                "The number of turns that all the white tools together survived: {}".format(self.count_turn_white))
+            logging.info(
+                "The number of turns that all the black tools together survived: {}".format(self.count_turn_black))
+            logging.info("num of checks are: {}".format(game_state.count_checks))
+            logging.info("white win")
             print("black lost")
             return 1
         elif not all_white_moves and not all_black_moves:
+            logging.info(
+                "The number of turns that all the white tools together survived: {}".format(self.count_turn_white))
+            logging.info(
+                "The number of turns that all the black tools together survived: {}".format(self.count_turn_black))
+            logging.info("num of checks are: {}".format(game_state.count_checks))
+            logging.info("Tico")
             return 2
         else:
             return 3
@@ -240,12 +268,20 @@ class game_state:
         #                 _all_valid_moves[0].append((row, col))
         #                 _all_valid_moves[1].append(valid_moves)
         _all_valid_moves = []
+        count_pices=0
         for row in range(0, 8):
             for col in range(0, 8):
                 if self.is_valid_piece(row, col) and self.get_piece(row, col).is_player(player):
+                    count_pices=count_pices+1
                     valid_moves = self.get_valid_moves((row, col))
                     for move in valid_moves:
                         _all_valid_moves.append(((row, col), move))
+
+        if count_pices==16:
+            if player==Player.PLAYER_1:
+                self.count_turn_white = self.count_turn_white + 1
+            else:
+                self.count_turn_black=self.count_turn_black+1
         return _all_valid_moves
 
     def king_can_castle_left(self, player):
@@ -308,6 +344,7 @@ class game_state:
 
     # Move a piece
     def move_piece(self, starting_square, ending_square, is_ai):
+
         current_square_row = starting_square[0]  # The integer row value of the starting square
         current_square_col = starting_square[1]  # The integer col value of the starting square
         next_square_row = ending_square[0]  # The integer row value of the ending square
@@ -328,6 +365,9 @@ class game_state:
 
             if ending_square in valid_moves:
                 moved_to_piece = self.get_piece(next_square_row, next_square_col)
+                if moving_piece.get_name() is "n":
+                    self.count_knight=self.count_knight+1
+
                 if moving_piece.get_name() is "k":
                     if moving_piece.is_player(Player.PLAYER_1):
                         if moved_to_piece == Player.EMPTY and next_square_col == 1 and self.king_can_castle_left(
@@ -582,7 +622,7 @@ class game_state:
         _left = 1
         _right = 1
 
-        # Left of the king
+        # Left of 0 king
         _possible_pin = ()
         while king_location_col - _left >= 0 and self.get_piece(king_location_row,
                                                                 king_location_col - _left) is not None:
@@ -854,7 +894,7 @@ class game_state:
                     # self._is_check = True
                     _checks.append((king_location_row + row_change[i], king_location_col + col_change[i]))
         # print([_checks, _pins, _pins_check])
-        return [_pins_check, _pins, _pins_check]
+        return [_checks, _pins, _pins_check]
 
 
 class chess_move():
